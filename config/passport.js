@@ -2,12 +2,26 @@ const passport = require('passport');
 const GitHubStrategy = require('passport-github2').Strategy;
 const User = require('../models/User');
 
+// Work out the OAuth callback URL.
+// - Local dev: GITHUB_CALLBACK_URL (http://localhost:3000/auth/github/callback)
+// - Render:    GITHUB_CALLBACK_URL if it is a real public URL; otherwise Render's own
+//              RENDER_EXTERNAL_URL, so a leftover localhost value can never be sent to GitHub.
+const CALLBACK_PATH = '/auth/github/callback';
+const configured = process.env.GITHUB_CALLBACK_URL;
+const isLocalhost = (url) => /localhost|127\.0\.0\.1/i.test(url || '');
+let callbackURL = configured || CALLBACK_PATH; // relative path resolves to the requesting host
+if (process.env.RENDER_EXTERNAL_URL && (!configured || isLocalhost(configured))) {
+  callbackURL = process.env.RENDER_EXTERNAL_URL.replace(/\/+$/, '') + CALLBACK_PATH;
+}
+console.log(`GitHub OAuth callback URL: ${callbackURL}`);
+
 passport.use(
   new GitHubStrategy(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: process.env.GITHUB_CALLBACK_URL,
+      callbackURL,
+      proxy: true, // behind Render's proxy; keeps the https:// scheme
       scope: ['user:email'],
     },
     async (accessToken, refreshToken, profile, done) => {
