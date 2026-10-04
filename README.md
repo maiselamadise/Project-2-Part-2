@@ -49,7 +49,7 @@ Both models automatically include `createdAt` and `updatedAt` timestamps.
    ```bash
    npm install
    ```
-2. Copy `.env.example` to `.env` and fill in your own MongoDB Atlas connection string:
+2. Copy `.env.example` to `.env` and fill in your own values (MongoDB Atlas connection string, session secret, and a GitHub OAuth App with callback `http://localhost:3000/auth/github/callback`):
    ```bash
    cp .env.example .env
    ```
@@ -60,7 +60,7 @@ Both models automatically include `createdAt` and `updatedAt` timestamps.
    The API will be available at `http://localhost:3000`, with Swagger UI at `http://localhost:3000/api-docs`.
    If `MONGO_URI` is missing or wrong, the server prints a clear error and exits instead of hanging.
 
-**Note:** `.env` is included in `.gitignore` and must never be committed. When deploying, add `MONGO_URI` and `PORT` as environment variables in the Render dashboard instead.
+**Note:** `.env` is included in `.gitignore` and must never be committed. When deploying, add the environment variables listed under **Deployment** in the Render dashboard instead.
 
 ## Endpoints
 
@@ -245,8 +245,14 @@ curl -s -X DELETE $BASE/api/books/<BOOK_ID>
 2. **Render:** create a **Web Service** from the GitHub repo with
    - Build command: `npm install`
    - Start command: `npm start`
-   - Environment variable: `MONGO_URI` = your Atlas connection string (`PORT` is set by Render automatically)
+   - Environment variables (`PORT` is set by Render automatically):
+     - `MONGO_URI` = your Atlas connection string
+     - `SESSION_SECRET` = a long random string
+     - `NODE_ENV` = `production`
+     - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` = from a GitHub OAuth App created for the **published** site
+     - `GITHUB_CALLBACK_URL` = `https://<render-url>/auth/github/callback` (**not** localhost)
 3. Once deployed, visit `<render-url>/health` - it should return `{"success":true,"status":"ok","database":"connected"}`. Then open `<render-url>/api-docs` or run `npm run smoke -- <render-url>`.
-4. Put the real URL at the top of this README.
+4. **GitHub OAuth App (production):** in GitHub -> Settings -> Developer settings -> OAuth Apps, set *Homepage URL* to `https://<render-url>` and *Authorization callback URL* to `https://<render-url>/auth/github/callback`. (GitHub allows only one callback URL per OAuth App, so use a separate OAuth App for local development with the localhost callback.)
+5. Put the real URL at the top of this README.
 
 `.env` and `node_modules/` are git-ignored; secrets live only in the Render dashboard.
